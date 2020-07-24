@@ -47,7 +47,7 @@
             NSData *initialImageData = UIImageJPEGRepresentation(initialImage, self.quality);
 
             /*
-             RectangleCoordinates expects a rectanle viewed from portrait,
+             RectangleCoordinates expects a rectangle viewed from portrait,
              while rectangleFeature returns a rectangle viewed from landscape, which explains the nonsense of the mapping below.
              Sorry about that.
              */

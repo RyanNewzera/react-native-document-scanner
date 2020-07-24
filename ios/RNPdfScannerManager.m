@@ -1,3 +1,9 @@
+#import <AVFoundation/AVFoundation.h>
+#import <CoreMedia/CoreMedia.h>
+#import <CoreVideo/CoreVideo.h>
+#import <CoreImage/CoreImage.h>
+#import <ImageIO/ImageIO.h>
+#import <GLKit/GLKit.h>
 
 #import "RNPdfScannerManager.h"
 #import "DocumentScannerView.h"
@@ -35,6 +41,66 @@ RCT_EXPORT_VIEW_PROPERTY(contrast, float)
 RCT_EXPORT_METHOD(capture) {
 
     [_scannerView capture];
+}
+
+- (CIRectangleFeature *)biggestRectangleInRectangles:(NSArray *)rectangles
+{
+    if (![rectangles count]) return nil;
+
+    float halfPerimiterValue = 0;
+
+    CIRectangleFeature *biggestRectangle = [rectangles firstObject];
+
+    for (CIRectangleFeature *rect in rectangles)
+    {
+        CGPoint p1 = rect.topLeft;
+        CGPoint p2 = rect.topRight;
+        CGFloat width = hypotf(p1.x - p2.x, p1.y - p2.y);
+
+        CGPoint p3 = rect.topLeft;
+        CGPoint p4 = rect.bottomLeft;
+        CGFloat height = hypotf(p3.x - p4.x, p3.y - p4.y);
+
+        CGFloat currentHalfPerimiterValue = height + width;
+
+        if (halfPerimiterValue < currentHalfPerimiterValue)
+        {
+            halfPerimiterValue = currentHalfPerimiterValue;
+            biggestRectangle = rect;
+        }
+    }
+
+    return biggestRectangle;
+}
+
+RCT_EXPORT_METHOD(getCoordinates:(NSString *)uri completion:(RCTResponseSenderBlock)callback) 
+{
+    NSString *parsedImageUri = [uri stringByReplacingOccurrencesOfString:@"file://" withString:@""];
+    NSURL *fileURL = [NSURL fileURLWithPath:parsedImageUri];
+    CIImage *image = [CIImage imageWithContentsOfURL:fileURL];
+
+    if (image.extent.size.width > image.extent.size.height) {
+        image = [image imageByApplyingCGOrientation: kCGImagePropertyOrientationUpMirrored];
+    }
+    else {
+        image = [image imageByApplyingCGOrientation: kCGImagePropertyOrientationDownMirrored];
+    }
+
+    CIDetector* detector = [CIDetector detectorOfType:CIDetectorTypeRectangle 
+                            context:nil 
+                            options:@{CIDetectorAccuracy : CIDetectorAccuracyHigh}];
+  
+
+    CIRectangleFeature *rectangleFeature = [self biggestRectangleInRectangles:[detector featuresInImage:image]];
+
+    NSDictionary *rectangleCoordinates = rectangleFeature ? @{
+                                     @"topLeft": @{ @"y": @(rectangleFeature.topLeft.y), @"x": @(rectangleFeature.topLeft.x)},
+                                     @"topRight": @{ @"y": @(rectangleFeature.topRight.y), @"x": @(rectangleFeature.topRight.x)},
+                                     @"bottomLeft": @{ @"y": @(rectangleFeature.bottomLeft.y), @"x": @(rectangleFeature.bottomLeft.x)},
+                                     @"bottomRight": @{ @"y": @(rectangleFeature.bottomRight.y), @"x": @(rectangleFeature.bottomRight.x)},
+                                     } : [NSNull null];
+
+    callback(@[rectangleCoordinates]);
 }
 
 - (UIView*) view {
