@@ -53,6 +53,7 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Random;
 
 /**
  * Created by allgood on 05/03/16.
@@ -339,7 +340,6 @@ public class ImageProcessor extends Handler {
             Point[] foundPoints = sortPoints(points);
 
             if (insideArea(foundPoints, size)) {
-
                 return new Quadrilateral(c, foundPoints);
             }
             // }
@@ -512,7 +512,7 @@ public class ImageProcessor extends Handler {
 
         Imgproc.resize(src, resizedImage, size);
         Imgproc.cvtColor(resizedImage, grayImage, Imgproc.COLOR_RGBA2GRAY, 4);
-        Imgproc.GaussianBlur(grayImage, grayImage, new Size(5, 5), 0);
+        Imgproc.GaussianBlur(grayImage, grayImage, new Size(1, 1), 0);
         Imgproc.Canny(grayImage, cannedImage, 80, 100, 3, false);
 
         ArrayList<MatOfPoint> contours = new ArrayList<MatOfPoint>();

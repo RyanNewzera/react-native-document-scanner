@@ -26,6 +26,7 @@ import org.opencv.core.CvType;
 import org.opencv.core.MatOfByte;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfInt;
+import org.opencv.core.MatOfDouble;
 import org.opencv.core.MatOfPoint;
 import org.opencv.core.MatOfPoint2f;
 import org.opencv.core.Point;
@@ -41,16 +42,19 @@ import org.opencv.android.Utils;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Random;
 
+import java.lang.Math;
 
 /**
  * Created by andre on 28/11/2017.
  */
 
-public class DocumentScannerModule extends ReactContextBaseJavaModule{
+public class DocumentScannerModule extends ReactContextBaseJavaModule {
 
     private String TAG = "RECTANGLE COORDINATES: ";
     ReactApplicationContext myContext;
@@ -245,7 +249,7 @@ public class DocumentScannerModule extends ReactContextBaseJavaModule{
 
         Imgproc.resize(src, resizedImage, size);
         Imgproc.cvtColor(resizedImage, grayImage, Imgproc.COLOR_RGBA2GRAY, 4);
-        Imgproc.GaussianBlur(grayImage, grayImage, new Size(5, 5), 0);
+        Imgproc.GaussianBlur(grayImage, grayImage, new Size(1, 1), 0);
         Imgproc.Canny(grayImage, cannedImage, 80, 100, 3, false);
 
         ArrayList<MatOfPoint> contours = new ArrayList<MatOfPoint>();
@@ -301,5 +305,39 @@ public class DocumentScannerModule extends ReactContextBaseJavaModule{
         } else {
             mLoaderCallback.onManagerConnected(LoaderCallbackInterface.SUCCESS);
         }
+    }
+
+    @ReactMethod
+    public void measureBlur(final String imageURI, final Callback myCallback) {
+        BaseLoaderCallback mLoaderCallback = new BaseLoaderCallback(myContext) {
+            @Override
+            public void onManagerConnected(int status) {
+                switch (status) {
+                case LoaderCallbackInterface.SUCCESS: {
+                    Log.d(TAG, "SUCCESS init openCV: " + status);
+                    Mat img = Imgcodecs.imread(imageURI);
+                    Imgproc.cvtColor(img, img, Imgproc.COLOR_BGR2GRAY);
+                    Imgproc.Laplacian(img, img, img.depth()); 
+                    MatOfDouble mean = new MatOfDouble();
+                    MatOfDouble std = new MatOfDouble();        
+                    Core.meanStdDev(img, mean, std);
+                    Double blurriness = Math.pow(std.get(0,0)[0], 2);
+                    myCallback.invoke(String.valueOf(blurriness));
+                }
+                    break;
+                default: {
+                    Log.d(TAG, "ERROR init Opencv: " + status);
+                    super.onManagerConnected(status);
+                }
+                    break;
+                }
+            }
+        };
+
+        if (!OpenCVLoader.initDebug()) {
+            CustomOpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_3_1_0, myContext, mLoaderCallback);
+        } else {
+            mLoaderCallback.onManagerConnected(LoaderCallbackInterface.SUCCESS);
+        }   
     }
 }
