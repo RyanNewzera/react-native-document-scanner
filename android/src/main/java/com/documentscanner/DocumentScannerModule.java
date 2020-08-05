@@ -275,20 +275,17 @@ public class DocumentScannerModule extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod
-    public void getCoordinates(String base64Image, final Callback myCallback) {
-        // Uri imgURI = Uri.parse(stringURI);
-        // Mat imgMat = getMatFromURI(imgURI);
-
-        final byte[] imgbytes = Base64.decode(base64Image, Base64.DEFAULT);
-
+    public void getCoordinates(final String imageURI, final Callback myCallback) {
         BaseLoaderCallback mLoaderCallback = new BaseLoaderCallback(myContext) {
             @Override
             public void onManagerConnected(int status) {
                 switch (status) {
                 case LoaderCallbackInterface.SUCCESS: {
                     Log.d(TAG, "SUCCESS init openCV: " + status);
-                    Mat imgMat = Imgcodecs.imdecode(new MatOfByte(imgbytes), Imgcodecs.CV_LOAD_IMAGE_UNCHANGED);
-                    myCallback.invoke(detectDocument(imgMat).previewPointsAsHash());
+                    Mat img = Imgcodecs.imread(imageURI);
+                    Imgproc.cvtColor(img, img, Imgproc.COLOR_BGRA2RGBA);
+                    Core.flip(img, img, -1);
+                    myCallback.invoke(detectDocument(img).previewPointsAsHash());
                 }
                     break;
                 default: {
