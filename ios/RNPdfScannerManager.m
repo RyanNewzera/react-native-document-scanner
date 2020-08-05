@@ -76,15 +76,12 @@ RCT_EXPORT_METHOD(capture) {
 RCT_EXPORT_METHOD(getCoordinates:(NSString *)uri completion:(RCTResponseSenderBlock)callback) 
 {
     NSString *parsedImageUri = [uri stringByReplacingOccurrencesOfString:@"file://" withString:@""];
+    
     NSURL *fileURL = [NSURL fileURLWithPath:parsedImageUri];
+    
     CIImage *image = [CIImage imageWithContentsOfURL:fileURL];
-
-    if (image.extent.size.width > image.extent.size.height) {
-        image = [image imageByApplyingCGOrientation: kCGImagePropertyOrientationUpMirrored];
-    }
-    else {
-        image = [image imageByApplyingCGOrientation: kCGImagePropertyOrientationDownMirrored];
-    }
+    
+    image = [image imageByApplyingCGOrientation: kCGImagePropertyOrientationDownMirrored];
 
     CIDetector* detector = [CIDetector detectorOfType:CIDetectorTypeRectangle 
                             context:nil 
@@ -94,12 +91,12 @@ RCT_EXPORT_METHOD(getCoordinates:(NSString *)uri completion:(RCTResponseSenderBl
     CIRectangleFeature *rectangleFeature = [self biggestRectangleInRectangles:[detector featuresInImage:image]];
 
     NSDictionary *rectangleCoordinates = rectangleFeature ? @{
-                                     @"topLeft": @{ @"y": @(rectangleFeature.topLeft.y), @"x": @(rectangleFeature.topLeft.x)},
-                                     @"topRight": @{ @"y": @(rectangleFeature.topRight.y), @"x": @(rectangleFeature.topRight.x)},
-                                     @"bottomLeft": @{ @"y": @(rectangleFeature.bottomLeft.y), @"x": @(rectangleFeature.bottomLeft.x)},
-                                     @"bottomRight": @{ @"y": @(rectangleFeature.bottomRight.y), @"x": @(rectangleFeature.bottomRight.x)},
+                                     @"bottomLeft": @{ @"y": @(rectangleFeature.topLeft.y), @"x": @(rectangleFeature.topLeft.x)},
+                                     @"bottomRight": @{ @"y": @(rectangleFeature.topRight.y), @"x": @(rectangleFeature.topRight.x)},
+                                     @"topLeft": @{ @"y": @(rectangleFeature.bottomLeft.y), @"x": @(rectangleFeature.bottomLeft.x)},
+                                     @"topRight": @{ @"y": @(rectangleFeature.bottomRight.y), @"x": @(rectangleFeature.bottomRight.x)},
                                      } : [NSNull null];
-
+    
     callback(@[rectangleCoordinates]);
 }
 
